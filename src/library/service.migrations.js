@@ -3,6 +3,7 @@ import colors from 'colors';
 import Migration from '../models/migration.model';
 import Command from '../models/command.model';
 import * as db from './db.service';
+import Log from '../models/log.model';
 
 const cmd = new Command();
 
@@ -12,7 +13,8 @@ async function handleUpFunction(migObj) {
     const existingMigration = await Migration.findOne({ name });
 
     if (!!existingMigration && existingMigration.status === 'COMPLETED') {
-      console.log(`${existingMigration.name}`.gray, `${existingMigration.status}`.green);
+      const text = `${ `${existingMigration.name}`.gray `: ${existingMigration.status}`.green }`;
+      new Log(text);
       return Promise.resolve();
     }
 
@@ -28,13 +30,10 @@ async function handleUpFunction(migObj) {
 
     const savedMig = await Migration.findOne({ name: migObj.name });
 
-    console.log(`
-      running migration up: ${migObj.name}`.dim
-    );
+    new Log(`running migration up: ${migObj.name}`);
 
     await migObj.up()
     .catch((err) => {
-      console.log(`${err}`.red);
       return Promise.reject(err);
     });
 
@@ -42,17 +41,18 @@ async function handleUpFunction(migObj) {
     await Migration.findOneAndUpdate({ name: migObj.name }, savedMig);
     return Promise.resolve(res);
   } else {
-    console.log(`Bad Migration object.`.red);
+    new Log(`Bad Migration object`, 'Misformed Migration Object', true);
     return Promise.reject(`
       Bad Migration object.
 
-      Example:
+      Proper Example:
+      
       Migration {
         name: String,
-        up: <Promise>,
-        down: <Promise>
+        up: Function <Promise>,
+        down: Function <Promise>
       }
-    `)
+    `);
   }
 }
 
@@ -78,7 +78,6 @@ export function getMigrationObjects(command=cmd) {
 
   return new Promise((res, rej) => {
     if (!fs.existsSync(`${migrationsFolder}`)) {
-      console.log(`ERROR: No migrations folder detected`.red);
       rej(`
         No Migrations folder detected.
         No folder exists named: ${migrationsFolder || 'undefined'}
@@ -101,8 +100,7 @@ export function getMigrationObjects(command=cmd) {
             const number = nameSplitArr.length > 0 ? nameSplitArr[0] : null;
 
             if (!number || !parseInt(number)) {
-              console.log(`Invalid Migration File name`.red);
-
+              new Log(`name: ${name} is not allowed.`, 'Invalid Migration File name', true);
               return rej(`
                 Invalid Migration File name
                 name: ${name} is not allowed.

@@ -1,10 +1,6 @@
 import colors from 'colors';
 
-function Log(text, title, isError=false) {
-  this.text = text;
-  this.title = title;
-
-
+function Log(text='', title='', isError=false) {
   (function print() {
     function formatPrint(str) {
       console.log(`MZ: ${str}`);
@@ -13,11 +9,11 @@ function Log(text, title, isError=false) {
     switch(process.env.MZ_LOG_LEVEL) {
       case 'DEBUG':
         if (isError) {
-          formatPrint(`${this.title}`.red);
-          formatPrint(`${this.text}`.gray);
+          formatPrint(`${title}`.red);
+          formatPrint(`${text}`.gray);
         } else {
-          formatPrint(`${this.title}`.cyan);
-          formatPrint(`${this.text}`.dim);
+          if (title.length > 0) formatPrint(`${title}`.cyan);
+          formatPrint(`${text}`.dim);
         }
         break;
       
